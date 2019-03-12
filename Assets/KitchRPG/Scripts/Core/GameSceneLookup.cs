@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using RotaryHeart.Lib.SerializableDictionary;
-using UnityEditor;
+﻿using RotaryHeart.Lib.SerializableDictionary;
 using UnityEngine;
 
 public enum GameSceneEnum

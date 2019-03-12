@@ -176,6 +176,9 @@ namespace RotaryHeart.Lib.SerializableDictionary
         {
             if (_dict != null)
                 _dict.Clear();
+
+            if(_keyValues != null)
+                _keyValues.Clear();
         }
 
         public bool ContainsKey(TKey key)

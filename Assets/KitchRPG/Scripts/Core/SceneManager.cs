@@ -27,19 +27,20 @@ public static class SceneManager
         UnityEngine.SceneManagement.SceneManager.LoadScene(index, a_mode);
 
         currentScene = a_scene;
-        //UnityEngine.SceneManagement.SceneManager.
     }
 
     public static void LoadSceneAsync(GameSceneEnum a_scene, LoadSceneMode a_mode)
     {
-        int index = lookup.GetSceneIndex(a_scene);
-
-        enviroment.StartCoroutine(LoadCoroutine(index));
+        enviroment.StartCoroutine(LoadCoroutine(a_scene));
     }
 
-    private static IEnumerator LoadCoroutine(int a_index)
+    private static IEnumerator LoadCoroutine(GameSceneEnum a_scene)
     {
-        yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(a_index, LoadSceneMode.Single);
+        int index = lookup.GetSceneIndex(a_scene);
+
+        yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(index, LoadSceneMode.Single);
+
+        currentScene = a_scene;
     }
 }
 

@@ -1,8 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using RotaryHeart.Lib.SerializableDictionary;
-using UnityEditorInternal;
 using UnityEngine;
 
 [System.Serializable]
@@ -28,16 +26,31 @@ public class BundleMap : SerializableDictionaryBase<AssetType, PathMap>// Assets
 public class ResourceBundleDictionary : SerializableDictionaryBase<BundleName, BundleMap> // Collection of Assets
 {
     private BundleName name;
-    public BundleMap TryGetBundleMap(string a_bundleName)
+    public bool TryGetBundleMap(string a_bundleName, out BundleMap o_map)
     {
+        name.Name = a_bundleName;
         name.hash = a_bundleName.GetHashCode();
-        return this[name];
+
+        if (TryGetValue(name, out o_map))
+        {
+            return true;
+        }
+
+        Debug.Log("Failed to find bundle with name: " + a_bundleName + ", searching globally...");
+        return false;
     }
 
-    public BundleMap TryGetBundleMap(int a_bundleNameHash)
+    public bool TryGetBundleMap(int a_bundleNameHash, out BundleMap o_map)
     {
         name.hash = a_bundleNameHash;
-        return this[name];
+
+        if (TryGetValue(name, out o_map))
+        {
+            return true;
+        }
+
+        Debug.LogError("Failed to find bundle with hash: " + a_bundleNameHash);
+        return false;
     }
 }
 
@@ -46,11 +59,22 @@ public class BundleName
 {
     [SerializeField]
     private string name;
+
+    public string Name
+    {
+        set
+        {
+            name = value;
+            hash = name.GetHashCode();
+        }
+    }
+
     public int hash;
 
     public BundleName()
     {
-        hash = name.GetHashCode();
+        if (name != null)
+            hash = name.GetHashCode();
     }
 
     public BundleName(string a_name)
@@ -81,7 +105,9 @@ public class ResourceMap : ScriptableObject
         bundles = new ResourceBundleDictionary();
         for (int i = 0; i < types.Length; ++i)
         {
-            types[i].Clear();
+            PathMap typeMap = types[i];
+            typeMap.Clear();
+  
         }
         
         ResourceMapper.Run(bundles, ref types);
@@ -105,7 +131,8 @@ public static class ResourceMapper
 
     private static ResourceBundleSpec[] bundles =
     {
-        new ResourceBundleSpec("UI", "UI")
+        new ResourceBundleSpec("UI", "UI"),
+        new ResourceBundleSpec("AI", "AI"), 
     };
 
     private static Dictionary<AssetType, string> AssetTypeExtensionLookup = new Dictionary<AssetType, string>()
@@ -188,11 +215,26 @@ public static class ResourceMapper
             currentBundleMap.Add(bundleName, bundleMap);
         }
 
-        for (int i = 0; i < (int) bundleMap.Count; ++i)
+        for (int i = 0; i < (int) AssetType.COUNT; ++i)
         {
             AssetType type = (AssetType)i;
-            string extension = AssetTypeExtensionLookup[type];
-            RecursivelyMapBundleDir(a_bundleDir, bundleMap[type], currentTypeMaps[i], extension);
+            string extension;
+
+            if (AssetTypeExtensionLookup.TryGetValue(type, out extension) == false)
+            {
+                continue;
+            }
+
+            PathMap pathMap;
+            if (bundleMap.TryGetValue(type, out pathMap) == false)
+            {
+                Debug.LogError("Failed to get path map of type " + type + " from bundlemap!");
+                continue;
+            }
+
+            PathMap globalPathMap = currentTypeMaps[i];
+
+            RecursivelyMapBundleDir(a_bundleDir, pathMap, globalPathMap, extension);
         }
 
         Debug.Log("Map Directory Complete!");
@@ -228,9 +270,10 @@ public static class ResourceMapper
 
         for (int i = 0; i < subDirectoryInfos.Length; ++i) // Map Children First
         {
-            RecursivelyMapBundleDir(subDirectoryInfos[i], a_bundlePathMap, a_globalPathMap,extension);
-            referenceList.RemoveLast();
+            RecursivelyMapBundleDir(subDirectoryInfos[i], a_bundlePathMap, a_globalPathMap, extension);
         }
+
+        referenceList.RemoveLast();
     }
 
     private static void MapResBundleFiles(DirectoryInfo a_dir, PathMap a_bundlePathMap, PathMap a_globalPathMap, string a_extension)

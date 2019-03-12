@@ -27,18 +27,18 @@ public static class ResourceManager
     private static bool ValidateMap(ResourceMap a_resourceMap)
     {
         int assetTypeCount = (int) AssetType.COUNT;
-        if (resourceMap.types.Length < assetTypeCount)
+        if (a_resourceMap.types.Length < assetTypeCount)
         {
             Debug.LogError("ResourceMap does not contain maps for all asset types!" +
                       " Expected: " + assetTypeCount +
-                      " Recieved: " + resourceMap.types.Length);
+                      " Recieved: " + a_resourceMap.types.Length);
             return false;
         }
 
         Stack<AssetType> nullTypes = new Stack<AssetType>();
         for (int i = 0; i < assetTypeCount; ++i)
         {
-            if(resourceMap.types[i] == null) // No Asset Map Found
+            if(a_resourceMap.types[i] == null) // No Asset Map Found
             {
                 nullTypes.Push((AssetType)i);
             }
@@ -62,18 +62,22 @@ public static class ResourceManager
 
     public static T LoadResource<T>(string a_path, AssetType a_type) where T : UnityEngine.Object
     {
+#if DEBUG
+        if(resourceMap == null)
+            DebugInstantiateManager();
+#endif
+
+
         int bundleNameEndIndex = a_path.IndexOf("/", 0, StringComparison.Ordinal);
         string bundleName = a_path.Substring(0, bundleNameEndIndex);
         // Try to map to bundle
 
         BundleMap bundleMap = null;
-        bundleMap = resourceMap.bundles.TryGetBundleMap(bundleName);
-
         string finalPath;
         PathMap pathMap = null;
 
         bool found = false;
-        if (bundleMap != null) // Bundle Found
+        if (resourceMap.bundles.TryGetBundleMap(bundleName, out bundleMap)) // Bundle Found
         {
             if (bundleMap.TryGetValue(a_type, out pathMap))
             {
@@ -84,7 +88,8 @@ public static class ResourceManager
         if (!found) // Search Global Asset Map
         {
             pathMap = resourceMap.types[(int) a_type];
-            found = pathMap.TryGetValue(a_path.GetHashCode(), out finalPath);
+            int pathHash = a_path.GetHashCode();
+            found = pathMap.TryGetValue(pathHash, out finalPath);
         }
 
         if (!found)
@@ -96,32 +101,14 @@ public static class ResourceManager
         return Resources.Load<T>(a_path);
     }
 
-    //public static T LoadResource<T>(string a_bundleName, string a_assetName, AssetType a_type) where T : UnityEngine.Object
-    //{
-    //    AssetMap map = null;
-    //    if(assetMapLookup.TryGetValue(a_type, out map) == false) // No Asset Map Found
-    //    {
-    //        Debug.LogError("Resource Manager was unable to find an Asset Map for Asset Type: " + a_type);
-    //        return null;
-    //    }
-    //
-    //    PathDictionary pathMap = null;
-    //
-    //    if(map.PathDictionary.TryGetValue(a_bundleName.GetHashCode(), out pathMap) == false) // No Asset Bundle Found
-    //    {
-    //        Debug.LogError("ResourceManager was unable to find an Asset Bundle of Name: " + bundleName);
-    //        return null;
-    //    }
-    //
-    //    string finalPath;
-    //    pathMap.TryGetValue(a_path.GetHashCode(), out finalPath);
-    //
-    //    return Resources.Load<T>(a_path);
-    //}
-}
-
-public struct ResourceMapping
-{
-    private string path;
-    private int hash;
+#if DEBUG
+    private static void DebugInstantiateManager()
+    {
+        ResourceMap map = (ResourceMap)Resources.Load("ResourceMap");
+        if (map != null)
+        {
+            Start(map);
+        }
+    }
+#endif
 }

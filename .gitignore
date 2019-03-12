@@ -21,3 +21,4 @@ ExportedObj/
 *.pdb
 KXInputCaller/x64/
 x64/
+Builds/

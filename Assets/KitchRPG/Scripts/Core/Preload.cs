@@ -2,19 +2,26 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
 public class Preload : MonoBehaviour
 {
-    [SerializeField]
-    private ResourceMap resourceMap;
-
     void Awake()
     {
-        ResourceManager.Start(resourceMap);
+        // Setup ResourceManager
+        ResourceMap map = (ResourceMap)Resources.Load("ResourceMap");
+        if (map != null)
+        {
+            ResourceManager.Start(map);
+        }
+        else
+        {
+            Debug.LogError("ResourceManager Setup Failed! Unable to find ResourceMap in Resources!");
+            return;
+        }
+        
 
-        //GameObject go = ResourceManager.LoadResource<GameObject>("UI/TestPrefab", AssetType.Prefab);
-        //GameObject go = Resources.Load<GameObject>("TestFail");
-        //Instantiate(go);
+        SceneManager.LoadSceneAsync(GameSceneEnum.Game, LoadSceneMode.Single);
     }
 }
