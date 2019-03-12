@@ -17,7 +17,7 @@ public class ServiceStarter : MonoBehaviour
         SceneManager.Start(gamingEnvironment, SceneLookup, GameSceneEnum.Bootstrap);
 
 
-        SceneManager.LoadSceneAsync(GameSceneEnum.Preload, LoadSceneMode.Single);
+        //SceneManager.LoadSceneAsync(GameSceneEnum.Preload, LoadSceneMode.Single);
     }
 }
 
